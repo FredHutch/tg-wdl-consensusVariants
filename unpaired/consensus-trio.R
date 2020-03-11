@@ -12,6 +12,7 @@ MutectFile <- args[3]
 baseName <- args[4]
 
 ## Load Libraries
+library(tidyverse)
 library(dplyr)
 
 print("Process GATK variants")
@@ -85,9 +86,9 @@ GATKCols <- colnames(G)[!colnames(G) %in% c(colnames(S), colnames(Mu))]
 SAMCols <- colnames(S)[!colnames(S) %in% c(colnames(G), colnames(Mu))]
 MuCols <- colnames(Mu)[!colnames(Mu) %in% c(colnames(G), colnames(S))]
 
-GMerge <- G %>% select(all_of(c(commonCols, GATKCols)))
-SMerge <- S %>% select(all_of(c(commonCols, SAMCols)))
-MuMerge <- Mu %>% select(all_of(c(commonCols, MuCols)))
+GMerge <- G %>% select(c(commonCols, GATKCols))
+SMerge <- S %>% select(c(commonCols, SAMCols))
+MuMerge <- Mu %>% select(c(commonCols, MuCols))
 
 variants <- full_join(full_join(GMerge, SMerge), MuMerge)
 variants$Type <- ifelse(nchar(variants$REF) == nchar(variants$ALT), "SNV", "INDEL");
