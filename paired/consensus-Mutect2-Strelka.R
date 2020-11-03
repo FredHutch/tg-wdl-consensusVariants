@@ -2,13 +2,15 @@
 args = commandArgs(trailingOnly=TRUE)
 
 # test if there is one argument: if not, return an error
-if (length(args) != 3) {
-  stop("3 arguments must be provided, Mutect file, Strelka file and base file name.n", call.=FALSE)
+if (length(args) != 5) {
+  stop("5 arguments must be provided, Mutect file, Strelka file and base file name, plus molecular_id and the ref_molecular_id.n", call.=FALSE)
 }
 
 Mutectfile <- args[1]
 Strelkafile <- args[2]
 baseName <- args[3]
+molecular_id <- args[4]
+ref_molecular_id <- args[5]
 
 ## Load Libraries
 library(dplyr)
@@ -76,7 +78,8 @@ variants$Type <- ifelse(nchar(variants$REF) == nchar(variants$ALT), "SNV", "INDE
 
 reannotate <- left_join(variants, G)
 reannotate <- left_join(reannotate, S)
-
+reannotate$molecular_id <- molecular_id
+reannotate$ref_molecular_id <- ref_molecular_id
 
 
 
