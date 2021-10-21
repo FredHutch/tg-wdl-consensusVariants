@@ -81,27 +81,17 @@ Mu <- Mu %>% dplyr::mutate_if(is.factor, as.character);
 Mu <- Mu %>% mutate_if(is.integer, as.character);
 
 ## Deal with flubbed annotation issues where the same variant is now annotated two different ways!  ARGH!
-commonCols <- c("VariantID","CHR", "POS", "REF", "ALT", "Chr", "Start", "End", "Ref", "Alt")
-GATKCols <- colnames(G)[!colnames(G) %in% c(colnames(S), colnames(Mu))]
-SAMCols <- colnames(S)[!colnames(S) %in% c(colnames(G), colnames(Mu))]
-MuCols <- colnames(Mu)[!colnames(Mu) %in% c(colnames(G), colnames(S))]
+commonCols <- intersect(intersect(colnames(G),colnames(S)),colnames(Sv))
 
-GMerge <- G %>% select(c(commonCols, GATKCols))
-SMerge <- S %>% select(c(commonCols, SAMCols))
-MuMerge <- Mu %>% select(c(commonCols, MuCols))
+GMerge <- G %>% select(c(commonCols), AD.GATK)
+SMerge <- S %>% select(c(commonCols), AD.SAM)
+MuMerge <- Mu %>% select(c(commonCols), FILTER.Mu)
 
 variants <- full_join(full_join(GMerge, SMerge), MuMerge)
 variants$Type <- ifelse(nchar(variants$REF) == nchar(variants$ALT), "SNV", "INDEL");
 
-reannotate <- left_join(variants, G)
-reannotate <- left_join(reannotate, S)
-reannotate <- left_join(reannotate, Mu)
 
-reannotate$Confidence  <- ifelse(!is.na(reannotate$AD.GATK) & !is.na(reannotate$AD.SAM) & !is.na(reannotate$AD.Mu), "conftier1",
-                  ifelse((is.na(reannotate$AD.GATK) | is.na(reannotate$AD.Mu)) & !is.na(reannotate$AD.SAM) & reannotate$Type == "SNV", "conftier2",
-                         ifelse(!(is.na(reannotate$AD.GATK) | is.na(reannotate$AD.Mu)) & is.na(reannotate$AD.SAM) & reannotate$Type == "INDEL", "conftier2", 
-                                "conftier3")))
-filtered <- reannotate %>% 
+filtered <- variants %>% 
   filter(!ExonicFunc.refGene %in% c("synonymous SNV", ".", "unknown")) %>%
   filter(FILTER.Mu == "PASS" & is.na(AD.SAM)==F & is.na(AD.GATK)==F |  # all three callers
            FILTER.Mu == "PASS" & is.na(AD.GATK)==F |  # pass for Mutect, and called by GATK too - NPM1 falls here
@@ -114,7 +104,11 @@ filtered$ExAC_ALL[grepl("^\\.$",filtered$ExAC_ALL)] <- 0
 filtered$ExAC_ALL <- as.numeric(filtered$ExAC_ALL)
 filtered <- filtered %>% filter(ExAC_ALL < 0.01 | cosmic70 != "\\.") 
 
+reannotate <- left_join(variants, G)
+reannotate <- left_join(reannotate, S)
+reannotate <- left_join(reannotate, Mu)
 
-write.table(filtered, file = paste0(baseName, ".consensus.filtered.tsv"), sep = "\t",
+
+write.table(reannotate, file = paste0(baseName, ".consensus.filtered.tsv"), sep = "\t",
             row.names = F)
 
