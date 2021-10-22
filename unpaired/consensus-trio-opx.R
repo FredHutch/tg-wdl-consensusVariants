@@ -29,8 +29,9 @@ G$DP.GATK <- as.integer(G$DP.GATK)
 G$VariantID <- paste(G$CHR, G$Gene.refGene, G$POS, G$REF, G$ALT, sep = "-")
 G$AD.GATK <- as.integer(gsub("^[^:]+:[^,]+,|:.*", "", G$MAGIC.GATK));
 G$VAF.GATK <- 100*as.numeric(G$AD.GATK)/as.numeric(G$DP.GATK);
-G <- Filter(function(y)!all(y == "."), G);
+#G <- Filter(function(y)!all(y == "."), G);
 G[G == ""] <- NA
+G$MAGIC.GATK <- NULL
 G <- G %>% dplyr::mutate_if(is.factor, as.character);
 G <- G %>% mutate_if(is.integer, as.character);
 
@@ -53,8 +54,9 @@ REF <- as.numeric(gsub(",.*$","",a));
 S$AD.SAM <- as.numeric(gsub("^.*,","",a));
 S$DP.SAM <- REF+S$AD.SAM;
 S$VAF.SAM <- 100*S$AD.SAM/S$DP.SAM;
-S <- Filter(function(y)!all(y == "."), S);
+#S <- Filter(function(y)!all(y == "."), S);
 S[S == ""] <- NA
+S$MAGIC.SAM <- NULL
 S <- S %>% mutate_if(is.factor, as.character);
 S <- S %>% mutate_if(is.integer, as.character);
 
@@ -75,8 +77,9 @@ Mu$DP.Mu <- as.integer(Mu$DP.Mu)
 Mu$VariantID <- paste(Mu$CHR, Mu$Gene.refGene, Mu$POS, Mu$REF, Mu$ALT, sep = "-")
 Mu$AD.Mu <- as.integer(gsub("^[^:]+:[^,]+,|:.*", "", Mu$MAGIC.Mu));
 Mu$VAF.Mu <- 100*as.numeric(Mu$AD.Mu)/as.numeric(Mu$DP.Mu);
-Mu <- Filter(function(y)!all(y == "."), Mu);
+#Mu <- Filter(function(y)!all(y == "."), Mu);
 Mu[Mu == ""] <- NA
+Mu$MAGIC.Mu <- NULL
 Mu <- Mu %>% dplyr::mutate_if(is.factor, as.character);
 Mu <- Mu %>% mutate_if(is.integer, as.character);
 
@@ -103,7 +106,7 @@ filtered <- variants %>%
 
 filtered$ExAC_ALL[grepl("^\\.$",filtered$ExAC_ALL)] <- 0
 filtered$ExAC_ALL <- as.numeric(filtered$ExAC_ALL)
-filtered <- filtered %>% filter(ExAC_ALL < 0.01 | cosmic70 != "\\.") 
+filtered <- filtered %>% filter(ExAC_ALL < 0.01 | cosmic70 != ".") 
 
 
 # take all the common annotation columns from the GATK and Strelka data and make a giant full join that has all the annotations from any variant called in either dataset
