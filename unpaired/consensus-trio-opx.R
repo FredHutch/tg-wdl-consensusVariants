@@ -13,7 +13,6 @@ baseName <- args[4]
 
 ## Load Libraries
 library(tidyverse)
-library(dplyr)
 
 print("Process GATK variants")
 G <- read.delim(file = GATKfile, row.names = NULL, 
@@ -106,7 +105,7 @@ filtered <- variants %>%
 
 filtered$ExAC_ALL[grepl("^\\.$",filtered$ExAC_ALL)] <- 0
 filtered$ExAC_ALL <- as.numeric(filtered$ExAC_ALL)
-filtered <- filtered %>% filter(ExAC_ALL < 0.01 | cosmic70 != ".") 
+filtered <- filtered %>% filter(ExAC_ALL < 0.01 | cosmic70 != ".")  %>% select(-ExAC_ALL)
 
 
 # take all the common annotation columns from the GATK and Strelka data and make a giant full join that has all the annotations from any variant called in either dataset
@@ -114,7 +113,7 @@ annotations <- full_join(G %>% select(all_of(commonCols)), S %>% select(all_of(c
 
 # now reapply those annotations to the filtered variants list, with the exception of AF_popmax since that's been reformatted in the variants list. 
 reannotate <- left_join(filtered, annotations)
-reannotate$molecular_id <- molecular_id
+reannotate$molecular_id <-baseName
 
 write.table(reannotate, file = paste0(baseName, ".consensus.filtered.tsv"), sep = "\t",
             row.names = F)
