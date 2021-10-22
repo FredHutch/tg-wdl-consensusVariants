@@ -100,14 +100,18 @@ filtered <- variants %>%
            grepl("slippage", FILTER.Mu) ==T  & is.na(AD.GATK)==F | # GATK, and contains slippage filter for Mutect, any samtools - FLT3 ITD gets lost here too
            FILTER.Mu == "clustered_events" & is.na(AD.SAM)==F & is.na(AD.GATK)==F # Mutect clustered events, and both other callers
   )  %>% filter(grepl("base_qual", FILTER.Mu) == F & grepl("map_qual", FILTER.Mu) == F) # regardless of other reasons, remove things that mutect filtered due to base or mapping quality concerns
+
 filtered$ExAC_ALL[grepl("^\\.$",filtered$ExAC_ALL)] <- 0
 filtered$ExAC_ALL <- as.numeric(filtered$ExAC_ALL)
 filtered <- filtered %>% filter(ExAC_ALL < 0.01 | cosmic70 != "\\.") 
 
-reannotate <- left_join(variants, G)
-reannotate <- left_join(reannotate, S)
-reannotate <- left_join(reannotate, Mu)
 
+# take all the common annotation columns from the GATK and Strelka data and make a giant full join that has all the annotations from any variant called in either dataset
+annotations <- full_join(G %>% select(all_of(commonCols)), S %>% select(all_of(commonCols)))
+
+# now reapply those annotations to the filtered variants list, with the exception of AF_popmax since that's been reformatted in the variants list. 
+reannotate <- left_join(filtered, annotations)
+reannotate$molecular_id <- molecular_id
 
 write.table(reannotate, file = paste0(baseName, ".consensus.filtered.tsv"), sep = "\t",
             row.names = F)
