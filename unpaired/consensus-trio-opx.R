@@ -84,7 +84,7 @@ Mu <- Mu %>% dplyr::mutate_if(is.factor, as.character);
 Mu <- Mu %>% mutate_if(is.integer, as.character);
 
 ## Deal with flubbed annotation issues where the same variant is now annotated two different ways!  ARGH!
-commonCols <- intersect(intersect(colnames(G),colnames(S)),colnames(Sv))
+commonCols <- intersect(intersect(colnames(G),colnames(S)),colnames(Mu))
 
 GMerge <- G %>% select(c(commonCols), AD.GATK)
 SMerge <- S %>% select(c(commonCols), AD.SAM)
