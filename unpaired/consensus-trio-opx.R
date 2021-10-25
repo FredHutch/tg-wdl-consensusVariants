@@ -85,9 +85,9 @@ Mu <- Mu %>% mutate_if(is.integer, as.character);
 ## Deal with flubbed annotation issues where the same variant is now annotated two different ways!  ARGH!
 commonCols <- intersect(intersect(colnames(G),colnames(S)),colnames(Mu))
 
-GMerge <- G %>% select(c(commonCols), AD.GATK)
-SMerge <- S %>% select(c(commonCols), AD.SAM)
-MuMerge <- Mu %>% select(c(commonCols), FILTER.Mu)
+GMerge <- G %>% select(c(commonCols), AD.GATK, DP.GATK)
+SMerge <- S %>% select(c(commonCols), AD.SAM, DP.SAM)
+MuMerge <- Mu %>% select(c(commonCols), FILTER.Mu,AD.Mu, DP.Mu)
 
 variants <- full_join(full_join(GMerge, SMerge), MuMerge)
 variants$Type <- ifelse(nchar(variants$REF) == nchar(variants$ALT), "SNV", "INDEL");
