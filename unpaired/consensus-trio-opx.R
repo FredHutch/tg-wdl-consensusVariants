@@ -83,8 +83,8 @@ Mu <- Mu %>% dplyr::mutate_if(is.factor, as.character);
 Mu <- Mu %>% mutate_if(is.integer, as.character);
 
 ## Deal with flubbed annotation issues where the same variant is now annotated two different ways!  ARGH!
-commonCols <- intersect(intersect(colnames(G),colnames(S)),colnames(Mu))
-
+#commonCols <- intersect(intersect(colnames(G),colnames(S)),colnames(Mu))
+commonCols <- c("CHR", "POS", "REF", "ALT")
 GMerge <- G %>% select(c(commonCols), AD.GATK, DP.GATK)
 SMerge <- S %>% select(c(commonCols), AD.SAM, DP.SAM)
 MuMerge <- Mu %>% select(c(commonCols), FILTER.Mu,AD.Mu, DP.Mu)
@@ -108,11 +108,12 @@ filtered$ExAC_ALL <- as.numeric(filtered$ExAC_ALL)
 filtered <- filtered %>% filter(ExAC_ALL < 0.01 | cosmic70 != ".")  %>% select(-ExAC_ALL)
 # UWLM filter:
 #.03 minimum variant frequency and a minimum of 5 variant reads for SNVs and 0.01 minimum variant frequency and a minimum of 4 variant reads for indels.
-filtered <- filtered %>% filter(AD.SAM >= 4 | AD.Mu >= 4 | AD.GATK >= 4)
+filtered <- filtered %>% filter(AD.SAM >= 4 | AD.Mu >= 4 | AD.GATK >= 4) %>% unique()
 
 
 # take all the common annotation columns from the GATK and Strelka data and make a giant full join that has all the annotations from any variant called in either dataset
-annotations <- full_join(G %>% select(all_of(commonCols)), S %>% select(all_of(commonCols))) %>% unique()
+sharedCols <- intersect(intersect(colnames(G),colnames(S)),colnames(Mu))
+annotations <- full_join(G %>% select(all_of(sharedCols)), S %>% select(all_of(sharedCols))) %>% unique()
 
 # now reapply those annotations to the filtered variants list, with the exception of AF_popmax since that's been reformatted in the variants list. 
 reannotate <- left_join(filtered, annotations)
