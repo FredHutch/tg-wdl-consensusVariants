@@ -106,6 +106,9 @@ filtered <- variants %>%
 filtered$ExAC_ALL[grepl("^\\.$",filtered$ExAC_ALL)] <- 0
 filtered$ExAC_ALL <- as.numeric(filtered$ExAC_ALL)
 filtered <- filtered %>% filter(ExAC_ALL < 0.01 | cosmic70 != ".")  %>% select(-ExAC_ALL)
+# UWLM filter:
+#.03 minimum variant frequency and a minimum of 5 variant reads for SNVs and 0.01 minimum variant frequency and a minimum of 4 variant reads for indels.
+filtered <- filtered %>% filter(AD.SAM >= 4 | AD.Mu >= 4 | AD.GATK >= 4)
 
 
 # take all the common annotation columns from the GATK and Strelka data and make a giant full join that has all the annotations from any variant called in either dataset
