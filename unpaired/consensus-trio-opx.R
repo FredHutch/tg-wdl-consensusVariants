@@ -90,21 +90,27 @@ MuMerge <- Mu %>% select(all_of(c(commonCols, "FILTER.Mu","AD.Mu","DP.Mu")))
 variants <- full_join(full_join(GMerge, SMerge), MuMerge)
 variants$Type <- ifelse(nchar(variants$REF) == nchar(variants$ALT), "SNV", "INDEL");
 
-
 filtered <- variants %>% 
   filter(!ExonicFunc.refGene %in% c("synonymous SNV", ".", "unknown")) %>%
-  filter(FILTER.Mu == "PASS" & is.na(AD.SAM)==F & is.na(AD.GATK)==F |  # all three callers
-           FILTER.Mu == "PASS" & is.na(AD.GATK)==F |  # pass for Mutect, and called by GATK too - NPM1 falls here
-           is.na(AD.SAM)==F  & is.na(AD.GATK)==F | # regardless of mutect, if called by both others
-           grepl("germline", FILTER.Mu) ==T  & is.na(AD.GATK)==F | # GATK, and germline, any samtools, this includes DNMT3A R882, FLT3 insertions and many NPM1 insertions
-           grepl("slippage", FILTER.Mu) ==T  & is.na(AD.GATK)==F | # GATK, and contains slippage filter for Mutect, any samtools - FLT3 ITD gets lost here too
-           FILTER.Mu == "clustered_events" & is.na(AD.SAM)==F & is.na(AD.GATK)==F # Mutect clustered events, and both other callers
-  )  %>% filter(grepl("base_qual", FILTER.Mu) == F & grepl("map_qual", FILTER.Mu) == F) # regardless of other reasons, remove things that mutect filtered due to base or mapping quality concerns
+  filter(is.na(AD.SAM)==F  & is.na(AD.GATK)==F | # if it's called by at least two callers, regardless of filter - less conservative filter for testing
+           is.na(FILTER.Mu)==F & is.na(AD.SAM)==F |
+           is.na(FILTER.Mu)==F & is.na(AD.GATK)==F )
 
-filtered$ExAC_ALL[grepl("^\\.$",filtered$ExAC_ALL)] <- 0
-filtered$ExAC_ALL <- as.numeric(filtered$ExAC_ALL)
-filtered <- filtered %>% filter(ExAC_ALL < 0.01 | cosmic70 != ".") %>% select(-ExAC_ALL)
-# UWLM filter:
+# filtered <- variants %>% 
+#   filter(!ExonicFunc.refGene %in% c("synonymous SNV", ".", "unknown")) %>%
+#   filter(FILTER.Mu == "PASS" & is.na(AD.SAM)==F & is.na(AD.GATK)==F |  # all three callers
+#            FILTER.Mu == "PASS" & is.na(AD.GATK)==F |  # pass for Mutect, and called by GATK too - NPM1 falls here
+#            is.na(AD.SAM)==F  & is.na(AD.GATK)==F | # regardless of mutect, if called by both others
+#            grepl("germline", FILTER.Mu) ==T  & is.na(AD.GATK)==F | # GATK, and germline, any samtools, this includes DNMT3A R882, FLT3 insertions and many NPM1 insertions
+#            grepl("slippage", FILTER.Mu) ==T  & is.na(AD.GATK)==F | # GATK, and contains slippage filter for Mutect, any samtools - FLT3 ITD gets lost here too
+#            FILTER.Mu == "clustered_events" & is.na(AD.SAM)==F & is.na(AD.GATK)==F # Mutect clustered events, and both other callers
+#   )  %>% filter(grepl("base_qual", FILTER.Mu) == F & grepl("map_qual", FILTER.Mu) == F) # regardless of other reasons, remove things that mutect filtered due to base or mapping quality concerns
+
+# filtered$ExAC_ALL[grepl("^\\.$",filtered$ExAC_ALL)] <- 0
+# filtered$ExAC_ALL <- as.numeric(filtered$ExAC_ALL)
+# filtered <- filtered %>% filter(ExAC_ALL < 0.01 | cosmic70 != ".") %>% select(-ExAC_ALL)
+
+# UWLM filter normally is something like:
 #.03 minimum variant frequency and a minimum of 5 variant reads for SNVs and 0.01 minimum variant frequency and a minimum of 4 variant reads for indels.
 filtered <- filtered %>% filter(AD.SAM >= 4 | AD.Mu >= 4 | AD.GATK >= 4) %>% unique()
 
